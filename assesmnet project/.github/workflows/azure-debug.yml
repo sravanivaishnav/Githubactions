@@ -7,6 +7,9 @@ on:
 jobs:
   debug-azure:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./infra
 
     steps:
       - name: Checkout
@@ -48,6 +51,6 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan -input=false
-        
+
 
         
