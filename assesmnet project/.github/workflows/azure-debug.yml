@@ -5,6 +5,9 @@ on:
   push:
     branches:
       - main          # or whatever your default branch is called
+        defaults:
+      run:
+        working-directory: "assesmnet project/infra"
     paths:
       - "infra/**"    # optional: only trigger when infra files change
 
