@@ -1,49 +1,17 @@
 name: Terraform Plan
+// Minimal Node.js HTTP server as the app entrypoint
+const http = require('http');
 
-on:
-  push:
-    branches: [ main ]
+const port = process.env.PORT || 3000;
 
-permissions:
-  id-token: write
-  contents: read
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ message: 'Hello from app/index.js' }));
+});
 
-jobs:
-  terraform:
-    runs-on: ubuntu-latest
+server.listen(port, () => {
+  console.log(`Server listening on http://localhost:${port}`);
+});
 
-    defaults:
-      run:
+module.exports = server;
         working-directory: infra
-
-    env:
-      TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init
-        run: |
-          terraform init \
-            -backend-config="resource_group_name=${{ secrets.TF_STATE_RG }}" \
-            -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE }}" \
-            -backend-config="container_name=${{ secrets.TF_STATE_CONTAINER }}" \
-            -backend-config="key=${{ secrets.TF_STATE_KEY }}" \
-            -backend-config="use_azuread_auth=true"
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Plan
-        run: terraform plan
