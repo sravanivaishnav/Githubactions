@@ -1,0 +1,40 @@
+name: Azure Login Debug
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  debug-azure:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show GitHub runner info
+        run: |
+          echo "Runner: $RUNNER_OS | $RUNNER_TEMP"
+
+      - name: Check secrets presence (no values shown)
+        run: |
+          if [ -z "${{ secrets.AZURE_CLIENT_ID }}" ]; then echo "AZURE_CLIENT_ID: missing"; else echo "AZURE_CLIENT_ID: present"; fi
+          if [ -z "${{ secrets.AZURE_TENANT_ID }}" ]; then echo "AZURE_TENANT_ID: missing"; else echo "AZURE_TENANT_ID: present"; fi
+          if [ -z "${{ secrets.AZURE_SUBSCRIPTION_ID }}" ]; then echo "AZURE_SUBSCRIPTION_ID: missing"; else echo "AZURE_SUBSCRIPTION_ID: present"; fi
+          if [ -z "${{ secrets.TF_STATE_RG }}" ]; then echo "TF_STATE_RG: missing"; else echo "TF_STATE_RG: present"; fi
+          if [ -z "${{ secrets.TF_STATE_STORAGE }}" ]; then echo "TF_STATE_STORAGE: missing"; else echo "TF_STATE_STORAGE: present"; fi
+          if [ -z "${{ secrets.TF_STATE_CONTAINER }}" ]; then echo "TF_STATE_CONTAINER: missing"; else echo "TF_STATE_CONTAINER: present"; fi
+          if [ -z "${{ secrets.TF_STATE_KEY }}" ]; then echo "TF_STATE_KEY: missing"; else echo "TF_STATE_KEY: present"; fi
+
+      - name: Azure Login (try)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Show logged-in account
+        run: |
+          az account show
+
+      - name: Terraform version
+        run: terraform -version || true
