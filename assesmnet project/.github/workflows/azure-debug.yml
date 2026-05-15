@@ -14,7 +14,7 @@ jobs:
 
       run:
 
-        working-directory: ./infra    # ← ADD THIS ONE LINE HERE
+        working-directory: assesmnet project/infra    # ← ADD THIS ONE LINE HERE
 
     steps:
 
