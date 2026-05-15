@@ -2,12 +2,11 @@
 name: Azure Login Debug
 
 on:
-  push:
-    branches: 
-      - main
+   push:
+    paths:
+      - '*/**'
   pull_request:
-    branches: 
-      - main
+    branches: [ main ]
   workflow_dispatch: {}
 
 jobs:
