@@ -1,11 +1,11 @@
 variable "resource_group_name" {
-  type = string
+ Default {}
 }
 
 variable "location" {
-  type = string
+ Default {}
 }
 
 variable "storage_account_name" {
-  type = string
+ Default {}
 }
