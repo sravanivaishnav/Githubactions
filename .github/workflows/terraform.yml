@@ -53,12 +53,11 @@ permissions:
   contents: read
 
 jobs:
-  terraform:
-    name: 'Terraform'
-    runs-on: ubuntu-latest
-    defaults:
-     run:
-       working-directory: ./infra    # ← ADD THIS ONE LINE HERE
+ debug-azure:
+   runs-on: ubuntu-latest
+   defaults:
+     run:
+       working-directory: ./infra    # ← ADD THIS ONE LINE HERE   # ← ADD THIS ONE LINE HERE
 
     environment: production
 
