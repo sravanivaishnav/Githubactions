@@ -2,9 +2,8 @@ name: Terraform Azure Deploy
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
+  push: {}
+  pull_request: {}
 
 jobs:
   terraform:
@@ -12,7 +11,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: infra
+        working-directory: "assesmnet project/infra"
 
     steps:
       - name: Checkout code
