@@ -38,3 +38,4 @@ jobs:
 
       - name: Terraform version
         run: terraform -version || true
+        
