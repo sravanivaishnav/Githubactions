@@ -46,6 +46,11 @@ jobs:
       - name: Show logged-in account
         run: az account show
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
       - name: Terraform version
         run: terraform -version || true
 
