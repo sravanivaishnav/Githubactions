@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - "assesmnet project/infra/**"
+      - ".github/workflows/**"        # ← triggers when workflow file changes too
 
 permissions:
   id-token: write
