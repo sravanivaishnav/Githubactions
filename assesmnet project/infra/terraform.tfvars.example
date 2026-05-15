@@ -1,0 +1,4 @@
+# Example variable overrides for this project
+project_name = "myproj"
+environment  = "dev"
+location     = "East US"
