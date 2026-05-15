@@ -25,6 +25,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: List infra directory (debug)
+        run: |
+          echo "Listing repo root:";
+          ls -la
+          echo "Listing infra/ folder:";
+          ls -la infra || true
+
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -43,9 +50,12 @@ jobs:
             -backend-config="container_name=${{ secrets.TF_STATE_CONTAINER }}" \
             -backend-config="key=${{ secrets.TF_STATE_KEY }}" \
             -backend-config="use_azuread_auth=true"
+        working-directory: infra
 
       - name: Terraform Validate
         run: terraform validate
+        working-directory: infra
 
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -input=false
+        working-directory: infra
