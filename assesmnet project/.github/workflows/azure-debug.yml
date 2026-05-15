@@ -43,7 +43,7 @@ jobs:
       - name: Terraform version
         run: terraform -version || true
 
-        - name: Terraform Init
+      - name: Terraform Init
         run: terraform init
 
       - name: Terraform Validate
