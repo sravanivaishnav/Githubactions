@@ -3,6 +3,12 @@ variable "subscription_id" {
   type        = string
 }
 
+variable "tenant_id" {
+  description = "Azure Tenant ID."
+  type        = string
+  default     = "e0793d39-0939-496d-b129-198edd916feb"
+}
+
 variable "project_name" {
   description = "Short project identifier used in resource names (lowercase, no spaces)."
   type        = string
