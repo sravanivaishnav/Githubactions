@@ -1,5 +1,5 @@
 # Dev environment — eastus, LRS storage, Standard_B1s VM
-subscription_id    = "54f5d471-6e4f-485a-ab96-4d64c131393b"
+subscription_id    = "559863b0-673d-4bbb-a4d7-2be41aa0c07c"
 project_name       = "opella"
 location           = "eastus"
 vnet_address_space = ["10.10.0.0/16"]
@@ -8,11 +8,9 @@ subnet_app_prefix  = "10.10.2.0/24"
 vm_size            = "Standard_B1s"
 vm_admin_username  = "azureuser"
 
-# vm_public_key is intentionally omitted here — set via:
-#   export TF_VAR_vm_public_key="$(cat ~/.ssh/id_rsa.pub)"
-# or as a GitHub Actions secret (TF_VAR_VM_PUBLIC_KEY)
+# vm_public_key is intentionally omitted — generated in CI by the workflow
 
 tags = {
-  Owner      = "sravani.vangara@accenture.com"
+  Owner      = "letsmovemom@gmail.com"
   CostCenter = "opella-challenge"
 }
