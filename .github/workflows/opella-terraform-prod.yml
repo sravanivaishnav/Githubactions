@@ -31,7 +31,8 @@ jobs:
   terraform-plan:
     name: "Plan (prod)"
     runs-on: ubuntu-latest
-    environment: prod
+    # No GitHub Environment here — OIDC uses ref:refs/heads/main subject
+    # (environment:prod is only needed on the apply job for the approval gate)
 
     steps:
       - name: Checkout

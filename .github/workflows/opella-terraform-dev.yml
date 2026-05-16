@@ -32,7 +32,8 @@ jobs:
   terraform-plan:
     name: "Plan (dev)"
     runs-on: ubuntu-latest
-    environment: dev
+    # No GitHub Environment here — OIDC uses ref:refs/heads/main subject
+    # (environment:dev is only needed on the apply job)
 
     steps:
       - name: Checkout
