@@ -35,6 +35,7 @@ locals {
   })
 }
 
+
 # ── Resource Group ─────────────────────────────────────────────────────────────
 resource "azurerm_resource_group" "main" {
   name     = "rg-${var.project_name}-${local.env}-${local.region}"
