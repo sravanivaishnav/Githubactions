@@ -1,147 +1,256 @@
-# Opella Azure Infrastructure — Terraform
+# Opella DevOps Challenge — Azure Infrastructure with Terraform
 
-Provisions Azure infrastructure across **dev** and **prod** environments using a reusable Terraform VNET module.
+This project provisions cloud infrastructure on Microsoft Azure using Terraform.
+It creates two separate environments (dev and prod) using a single reusable
+building block called a Terraform module.
 
-## Architecture
+---
+
+## What does this project do?
+
+Every time code is pushed to GitHub, an automated pipeline:
+
+1. Checks that the code is clean and correctly formatted
+2. Connects to Azure securely (no passwords stored — uses OIDC tokens)
+3. Shows a preview of what will change in Azure (terraform plan)
+4. Can optionally apply those changes (currently commented out for safety)
+
+It builds the following Azure resources in **both dev and prod**:
+
+| Resource | What it is |
+|----------|-----------|
+| Resource Group | A folder in Azure that holds all our resources |
+| Virtual Network | A private network in Azure (like a LAN in the cloud) |
+| Subnets | Smaller segments inside the VNet (web layer, app layer) |
+| Network Security Groups | Firewall rules controlling allowed traffic |
+| Linux Virtual Machine | A small Ubuntu server running in the cloud |
+| Storage Account | Cloud storage (like a shared drive) |
+| Blob Container | A private bucket inside storage for files/data |
+
+---
+
+## Folder Structure
 
 ```
-infra/
+opella-challenge/
+│
 ├── modules/
-│   └── vnet/               # Reusable VNET module
-│       ├── main.tf
-│       ├── variables.tf
-│       ├── outputs.tf
-│       └── README.md
+│   └── vnet/               <-- Reusable building block for Virtual Networks
+│       ├── main.tf         <-- Actual Azure resources (VNet, subnets, NSGs)
+│       ├── variables.tf    <-- Inputs the module accepts
+│       ├── outputs.tf      <-- What the module gives back (IDs, names)
+│       └── README.md       <-- Module documentation
+│
 ├── environments/
-│   ├── dev/                # East US — Standard_B1s VM, LRS storage
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   ├── outputs.tf
-│   │   └── terraform.tfvars
-│   └── prod/               # West Europe — Standard_B2s VM, GRS storage
+│   ├── dev/                <-- Development environment (East US region)
+│   │   ├── main.tf         <-- Calls the VNet module + creates VM and storage
+│   │   ├── variables.tf    <-- All configurable values for dev
+│   │   ├── outputs.tf      <-- Useful values printed after deployment
+│   │   └── terraform.tfvars  <-- Actual values used for dev
+│   │
+│   └── prod/               <-- Production environment (West Europe region)
 │       ├── main.tf
 │       ├── variables.tf
 │       ├── outputs.tf
 │       └── terraform.tfvars
+│
 ├── .github/
 │   └── workflows/
-│       ├── terraform-dev.yml
-│       └── terraform-prod.yml
-├── .tflint.hcl
-└── .gitignore
+│       ├── opella-terraform-dev.yml   <-- CI/CD pipeline for dev
+│       └── opella-terraform-prod.yml  <-- CI/CD pipeline for prod
+│
+├── .tflint.hcl             <-- Linting rules to catch mistakes early
+├── .gitignore              <-- Files never committed (state files, secrets)
+└── README.md               <-- You are here
 ```
 
-## Resources per environment
+---
 
-| Resource | Dev | Prod |
-|----------|-----|------|
-| Resource Group | `rg-opella-dev-eastus` | `rg-opella-prod-westeurope` |
-| VNet (module) | `10.10.0.0/16` | `10.20.0.0/16` |
-| Subnets | `snet-web-dev`, `snet-app-dev` | `snet-web-prod`, `snet-app-prod` |
-| NSG per subnet | ✅ | ✅ |
-| Storage Account | Standard LRS | Standard GRS |
-| Blob Container | `data` (private) | `data` (private) |
-| Linux VM | `Standard_B1s` (Ubuntu 22.04) | `Standard_B2s` (Ubuntu 22.04) |
+## Dev vs Prod — What is different?
 
-## Why Resource Groups (not Subscriptions) per environment?
+| Setting | Dev | Prod |
+|---------|-----|------|
+| Azure Region | East US | West Europe |
+| Network range | 10.10.0.0/16 | 10.20.0.0/16 (separate, non-overlapping) |
+| VM Size | Standard_B1s (1 CPU, 1 GB RAM) | Standard_B2s (2 CPU, 4 GB RAM) |
+| Storage redundancy | LRS — 1 copy, cheapest | GRS — 6 copies across 2 regions |
+| HTTP access | Allowed (easier for dev testing) | Blocked (HTTPS only in prod) |
 
-For this challenge's scope (free tier, single developer), Resource Groups provide sufficient isolation:
-- **Cost**: No extra subscription overhead.
-- **RBAC**: You can still scope IAM roles to a Resource Group.
-- **Naming**: Env + region encoded in every resource name makes ownership obvious.
+---
 
-Use separate Subscriptions when you need billing isolation, subscription-level policy enforcement, or hard quota boundaries — typically at team/product scale.
+## Why Resource Groups and not separate Subscriptions?
 
-## Tagging strategy
+Both environments live in the **same Azure subscription** but in separate Resource Groups (RGs).
 
-Every resource gets four mandatory tags enforced via the `locals` block in each environment:
+- **Resource Groups** are free, simple to manage, and give enough isolation for a small team
+- **Subscriptions** make sense when you need separate billing, strict quota limits, or compliance boundaries between large teams
 
-| Tag | Value | Purpose |
-|-----|-------|---------|
-| `Environment` | `dev` / `prod` | Cost allocation, policy targeting |
-| `Region` | `eastus` / `westeurope` | Quick visual identification |
-| `ManagedBy` | `Terraform` | Flags resources as IaC-managed |
-| `Project` | `opella` | Cross-environment grouping |
+> Rule of thumb: Resource Groups for projects and small teams. Subscriptions for large enterprises with multiple independent teams.
 
-To enforce tagging across the org, attach an **Azure Policy** (`Require a tag and its value on resources`) scoped to the subscription.
+---
 
-## How to run locally
+## How does the reusable module work?
+
+The `modules/vnet/` folder is like a template. Instead of copy-pasting the same
+networking code for dev and prod, both environments call the same module with
+different settings:
+
+```hcl
+# Dev calls the module like this:
+module "vnet" {
+  source        = "../../modules/vnet"
+  vnet_name     = "vnet-opella-dev-eastus"
+  address_space = ["10.10.0.0/16"]
+  ...
+}
+
+# Prod calls the exact same module with different values:
+module "vnet" {
+  source        = "../../modules/vnet"
+  vnet_name     = "vnet-opella-prod-westeurope"
+  address_space = ["10.20.0.0/16"]
+  ...
+}
+```
+
+Any improvement to the module automatically benefits both environments.
+
+---
+
+## How is tagging enforced?
+
+Every Azure resource automatically gets these 4 tags:
+
+| Tag | Example Value | Why it matters |
+|-----|--------------|----------------|
+| `Environment` | dev / prod | Know which environment a resource belongs to |
+| `Region` | eastus / westeurope | Know where the resource lives |
+| `ManagedBy` | Terraform | Know this was created by code, not manually |
+| `Project` | opella | Group all resources for this project together |
+
+Tags are defined once in a `locals` block and applied to every resource —
+you cannot forget to tag something because it is automatic.
+
+To enforce tagging at the organisation level, attach an **Azure Policy**
+(`Require a tag and its value`) scoped to the subscription.
+
+---
+
+## How does the CI/CD pipeline work?
+
+```
+You push code to GitHub
+        │
+        ▼
+  Format Check   — Is the code properly formatted? (terraform fmt)
+        │
+        ▼
+  Init           — Download providers, connect to remote state storage
+        │
+        ▼
+  Validate       — Is the Terraform code valid? (no syntax errors)
+        │
+        ▼
+  Plan           — Show what WOULD change in Azure (nothing is touched yet)
+        │
+        ├── On a Pull Request → plan is posted as a comment on the PR
+        │
+        └── On merge to main → plan is saved, apply can be triggered
+
+  Apply is currently commented out in the workflow files.
+  Uncomment it when you are ready to deploy automatically.
+```
+
+---
+
+## How is Azure authentication handled? (No passwords stored!)
+
+This project uses **OIDC (OpenID Connect)** — a modern passwordless authentication method.
+
+Instead of storing a password, GitHub gets a short-lived token from Azure that
+expires after a few minutes. Azure only trusts tokens coming from this specific
+GitHub repository.
+
+Three trust relationships are registered in Azure AD:
+
+| Credential Name | Used when |
+|-----------------|-----------|
+| `github-main` | Plan jobs run (on push to main branch) |
+| `github-env-dev` | Apply job runs for dev environment |
+| `github-env-prod` | Apply job runs for prod environment |
+
+---
+
+## Where is Terraform state stored?
+
+Terraform keeps a record of everything it has built (called a state file).
+This is stored in an Azure Blob Storage account so that:
+
+- The state is never lost if your laptop breaks
+- Multiple people can work on the same infrastructure safely
+- Dev and prod have completely separate state files
+
+| Environment | State file |
+|-------------|-----------|
+| Dev | `opella-dev.terraform.tfstate` |
+| Prod | `opella-prod.terraform.tfstate` |
+
+---
+
+## How to run this on your local machine
 
 ### Prerequisites
 
-- [Terraform ≥ 1.5](https://developer.hashicorp.com/terraform/install)
+- [Terraform](https://developer.hashicorp.com/terraform/install) v1.5 or newer
 - [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
-- An SSH key pair (`ssh-keygen -t rsa -b 4096`)
+- An SSH key pair — generate one with: `ssh-keygen -t rsa -b 4096`
 
 ### Steps
 
 ```bash
-# 1. Authenticate
+# 1. Log in to Azure
 az login
 
-# 2. Set SSH public key
+# 2. Go to the dev environment folder
+cd environments/dev
+
+# 3. Provide your SSH public key for the VM
 export TF_VAR_vm_public_key="$(cat ~/.ssh/id_rsa.pub)"
 
-# 3. Init and plan dev
-cd environments/dev
+# 4. Download providers and connect to remote state
 terraform init
+
+# 5. Preview what will be created (nothing changes yet)
 terraform plan
 
-# 4. Apply dev
+# 6. Actually create the resources in Azure
 terraform apply
 ```
 
-## GitHub Actions — Release lifecycle
-
-```
-feature-branch  ──PR──►  main
-                           │
-               ┌───────────┼────────────────┐
-               ▼           ▼                ▼
-          fmt-check    validate         tflint
-               └───────────┼────────────────┘
-                           ▼
-                       plan (posted as PR comment)
-                           │
-                    merge to main
-                           │
-               ┌───────────┴────────────┐
-               ▼                        ▼
-          apply dev              plan prod (preview)
-                                         │
-                                  manual approval
-                                         │
-                                   apply prod
-```
-
-### Required GitHub Secrets
-
-Set these in **Settings → Secrets and variables → Actions**:
-
-| Secret | Description |
-|--------|-------------|
-| `ARM_SUBSCRIPTION_ID` | Azure Subscription ID |
-| `ARM_TENANT_ID` | Azure Tenant ID |
-| `ARM_CLIENT_ID` | Service Principal Client ID |
-| `ARM_CLIENT_SECRET` | Service Principal Client Secret |
-| `TF_VAR_VM_PUBLIC_KEY` | SSH public key for VM admin |
-
-### Creating the Service Principal
-
-```bash
-az ad sp create-for-rbac \
-  --name "sp-opella-terraform" \
-  --role "Contributor" \
-  --scopes "/subscriptions/<SUBSCRIPTION_ID>"
-```
+---
 
 ## Code quality tools
 
-| Tool | Purpose | How to run |
-|------|---------|-----------|
-| `terraform fmt` | Canonical formatting | `terraform fmt -recursive` |
-| `terraform validate` | Config validity | `terraform validate` |
-| `tflint` | Linting + Azure rules | `tflint --recursive` |
-| `terraform-docs` | Auto-generate module docs | `terraform-docs markdown modules/vnet > modules/vnet/README.md` |
+| Tool | What it does | How to run |
+|------|-------------|-----------|
+| `terraform fmt` | Formats code consistently | `terraform fmt -recursive` |
+| `terraform validate` | Checks for syntax errors | `terraform validate` |
+| `tflint` | Catches Azure-specific mistakes | `tflint --recursive` |
+| `terraform-docs` | Auto-generates docs from code | see below |
 
-Install terraform-docs: `choco install terraform-docs` or `brew install terraform-docs`
+To auto-generate module documentation:
+```bash
+# Install terraform-docs first:
+# Windows: choco install terraform-docs
+# Mac:     brew install terraform-docs
+
+terraform-docs markdown modules/vnet > modules/vnet/README.md
+```
+
+---
+
+## Terraform Plan Output
+
+The full plan output is saved in `terraform-plan-dev.txt`.
+
+It shows **14 resources to add, 0 to change, 0 to destroy** for the dev environment.

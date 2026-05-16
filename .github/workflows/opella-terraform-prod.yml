@@ -121,39 +121,34 @@ jobs:
           path: ${{ env.WORKING_DIR }}/tfplan
           retention-days: 1
 
-  terraform-apply:
-    name: "Apply (prod)"
-    runs-on: ubuntu-latest
-    needs: terraform-plan
-    # Prod apply pauses for manual approval — configure a GitHub Environment
-    # named "prod" with required reviewers in repo Settings > Environments
-    environment: prod
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Terraform Init (with remote backend)
-        run: |
-          terraform init -input=false \
-            -backend-config="resource_group_name=${{ secrets.TF_STATE_RG }}" \
-            -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE }}" \
-            -backend-config="container_name=${{ secrets.TF_STATE_CONTAINER }}" \
-            -backend-config="key=opella-prod.terraform.tfstate"
-        working-directory: ${{ env.WORKING_DIR }}
-
-      - name: Download Plan artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: tfplan-prod
-          path: ${{ env.WORKING_DIR }}
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve -input=false tfplan
-        working-directory: ${{ env.WORKING_DIR }}
+  # ── Apply job is commented out intentionally ──────────────────────────────
+  # To enable auto-apply on merge to main, uncomment the block below.
+  # For prod safety, always set up a required reviewer FIRST in:
+  #   GitHub → Settings → Environments → prod → Required reviewers
+  #
+  # terraform-apply:
+  #   name: "Apply (prod)"
+  #   runs-on: ubuntu-latest
+  #   needs: terraform-plan
+  #   environment: prod   # <-- this triggers the manual approval gate
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: hashicorp/setup-terraform@v3
+  #       with:
+  #         terraform_version: ${{ env.TF_VERSION }}
+  #     - name: Terraform Init
+  #       run: |
+  #         terraform init -input=false \
+  #           -backend-config="resource_group_name=${{ secrets.TF_STATE_RG }}" \
+  #           -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE }}" \
+  #           -backend-config="container_name=${{ secrets.TF_STATE_CONTAINER }}" \
+  #           -backend-config="key=opella-prod.terraform.tfstate"
+  #       working-directory: ${{ env.WORKING_DIR }}
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: tfplan-prod
+  #         path: ${{ env.WORKING_DIR }}
+  #     - name: Terraform Apply
+  #       run: terraform apply -auto-approve -input=false tfplan
+  #       working-directory: ${{ env.WORKING_DIR }}
