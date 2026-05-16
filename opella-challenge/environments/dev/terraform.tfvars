@@ -1,3 +1,4 @@
+# Dev environment — eastus, LRS storage, Standard_B1s VM
 subscription_id    = "54f5d471-6e4f-485a-ab96-4d64c131393b"
 project_name       = "opella"
 location           = "eastus"
