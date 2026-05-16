@@ -11,13 +11,9 @@ terraform {
   }
   required_version = ">= 1.5.0"
 
-  # Uncomment and fill in after creating a storage account for remote state:
-  # backend "azurerm" {
-  #   resource_group_name  = "rg-tfstate"
-  #   storage_account_name = "stterraformstate<unique>"
-  #   container_name       = "tfstate"
-  #   key                  = "dev.terraform.tfstate"
-  # }
+  # Backend config values are injected at CI time via -backend-config flags.
+  # To run locally: terraform init -backend-config=backend-dev.hcl
+  backend "azurerm" {}
 }
 
 provider "azurerm" {
