@@ -12,6 +12,6 @@ vm_admin_username  = "azureuser"
 # or as a GitHub Actions secret (TF_VAR_VM_PUBLIC_KEY)
 
 tags = {
-  Owner   = "sravani.vangara@accenture.com"
+  Owner      = "sravani.vangara@accenture.com"
   CostCenter = "opella-challenge"
 }
