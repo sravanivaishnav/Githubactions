@@ -1,0 +1,58 @@
+variable "subscription_id" {
+  description = "Azure Subscription ID."
+  type        = string
+}
+
+variable "project_name" {
+  description = "Short project identifier used in resource names (lowercase, no spaces)."
+  type        = string
+  default     = "opella"
+}
+
+variable "location" {
+  description = "Azure region for prod resources."
+  type        = string
+  default     = "westeurope"
+}
+
+variable "vnet_address_space" {
+  description = "Address space for the prod VNet (must not overlap with dev: 10.10.0.0/16)."
+  type        = list(string)
+  default     = ["10.20.0.0/16"]
+}
+
+variable "subnet_web_prefix" {
+  description = "CIDR for the web subnet."
+  type        = string
+  default     = "10.20.1.0/24"
+}
+
+variable "subnet_app_prefix" {
+  description = "CIDR for the app subnet."
+  type        = string
+  default     = "10.20.2.0/24"
+}
+
+variable "vm_size" {
+  description = "Size of the Linux VM."
+  type        = string
+  default     = "Standard_B2s"
+}
+
+variable "vm_admin_username" {
+  description = "Admin username for the Linux VM."
+  type        = string
+  default     = "azureuser"
+}
+
+variable "vm_public_key" {
+  description = "SSH public key for VM admin access."
+  type        = string
+  sensitive   = true
+}
+
+variable "tags" {
+  description = "Additional tags merged with the default tag set."
+  type        = map(string)
+  default     = {}
+}
