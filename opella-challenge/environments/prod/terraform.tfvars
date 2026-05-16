@@ -1,4 +1,4 @@
-﻿# Production environment â€” westeurope, GRS storage, Standard_B2s VM
+# Production environment â€” westeurope, GRS storage, Standard_B2s VM
 subscription_id    = "559863b0-673d-4bbb-a4d7-2be41aa0c07c"
 project_name       = "opella"
 location           = "westeurope"
